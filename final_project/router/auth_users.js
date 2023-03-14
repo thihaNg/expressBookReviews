@@ -15,14 +15,15 @@ const authenticatedUser = (username,password)=>{ //returns boolean
 
     const validUsers = users.filter(user => user.username === username && user.password === password);
 
-    return validUsers > 0;
+    return validUsers.length > 0;
 
 }
 
 //only registered users can login
 regd_users.post("/login", (req,res) => {
-  
+
     const {username, password} = req.body;
+
     if(!username || !password) {
         return res.status(404).json("Error logging in!");
     }
@@ -45,13 +46,35 @@ regd_users.post("/login", (req,res) => {
 //1: {"author": "Chinua Achebe","title": "Things Fall Apart", "reviews": {} }
 // Add a book review
 regd_users.put("/auth/review/:isbn", (req, res) => {
+
+    const username = req.session.authorization.username;
+    const review = req.query.review;
   
     let {isbn} = req.params;
-    // if(isbn) {
-    //     books[isbn].author = 
-    // }
+    if(isbn && books[isbn] && review) {
+        books[isbn].reviews[username] = review;
+        
+        return res.status(200).json(books[isbn])
+    }
+
+    res.status(404).json("Something went wrong");
 
 });
+
+regd_users.delete("/auth/review/:isbn", (req, res) => {
+
+    const {isbn} = req.params;
+    const username = req.session.authorization.username;
+
+    if(isbn && books[isbn] && books[isbn].reviews[username]) {
+        delete books[isbn].reviews[username];
+
+        return res.status(200).json(books[isbn]);
+    }
+
+    res.status(404).json({message: "Something went wrong!"})
+
+})
 
 module.exports.authenticated = regd_users;
 module.exports.isValid = isValid;
